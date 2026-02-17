@@ -1,0 +1,18 @@
+{
+  "name": "Standoff2 Team Draw",
+  "short_name": "S2 Draw",
+  "description": "Random team draw for core and normal members.",
+  "start_url": "./Standoff2.html",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#f8fafc",
+  "theme_color": "#1e40af",
+  "icons": [
+    {
+      "src": "icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
