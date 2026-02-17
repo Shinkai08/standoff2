@@ -1,0 +1,435 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>警匪随机分组抽签</title>
+    <!-- 引入 Tailwind CSS 进行样式设计 -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* 简单的淡入动画 */
+        .animate-fade-in-up {
+            animation: fadeInUp 0.5s ease-out forwards;
+        }
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        /* 隐藏滚动条但保留功能 */
+        .no-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .no-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+    </style>
+</head>
+<body class="min-h-screen bg-slate-50 text-slate-800 font-sans p-4 md:p-8">
+
+    <div class="max-w-4xl mx-auto">
+        
+        <!-- 标题栏 -->
+        <header class="mb-8 text-center">
+            <h1 class="text-3xl font-bold text-indigo-900 flex items-center justify-center gap-2">
+                <!-- Shuffle Icon -->
+                <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-indigo-600"><path d="M2 18h1.4c1.3 0 2.5-.6 3.3-1.7l14.2-12.6c.8-1.1 2-1.7 3.3-1.7H22"/><path d="M2 6h1.4c1.3 0 2.5.6 3.3 1.7l14.2 12.6c.8 1.1 2 1.7 3.3 1.7H22"/></svg>
+                警匪分组抽签器
+            </h1>
+            <p class="text-slate-500 mt-2">
+                核心组 (每队限2人) + 普通组 (每队限3人)
+            </p>
+        </header>
+
+        <!-- 输入区域 -->
+        <div class="grid md:grid-cols-2 gap-6 mb-8">
+          
+            <!-- 核心组成员输入 -->
+            <div class="bg-white p-6 rounded-xl shadow-sm border border-amber-100 relative overflow-hidden">
+                <div class="absolute top-0 right-0 p-2 opacity-10 pointer-events-none">
+                    <!-- Crown Icon Big -->
+                    <svg xmlns="http://www.w3.org/2000/svg" width="96" height="96" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-amber-500"><path d="m2 4 3 12h14l3-12-6 7-4-7-4 7-6-7zm3 16h14"/></svg>
+                </div>
+                <h2 class="text-lg font-bold text-amber-600 flex items-center gap-2 mb-4 relative z-10">
+                    <!-- Crown Icon Small -->
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m2 4 3 12h14l3-12-6 7-4-7-4 7-6-7zm3 16h14"/></svg>
+                    核心组名单 <span id="core-count" class="text-xs font-normal text-amber-400 bg-amber-50 px-2 py-0.5 rounded-full">池中有 0 人</span>
+                </h2>
+                
+                <form id="core-form" class="flex gap-2 mb-4 relative z-10">
+                    <input type="text" id="core-input" placeholder="输入核心成员姓名" class="flex-1 px-4 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500">
+                    <button type="submit" class="bg-amber-500 hover:bg-amber-600 text-white p-2 rounded-lg transition-colors">
+                        <!-- Plus Icon -->
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="M12 5v14"/></svg>
+                    </button>
+                </form>
+
+                <div id="core-list" class="space-y-2 max-h-48 overflow-y-auto relative z-10 no-scrollbar">
+                    <p class="text-sm text-slate-400 text-center py-4 empty-msg">暂无核心成员</p>
+                </div>
+            </div>
+
+            <!-- 普通成员输入 -->
+            <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+                <h2 class="text-lg font-bold text-slate-600 flex items-center gap-2 mb-4">
+                    <!-- Users Icon -->
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                    普通组名单 <span id="normal-count" class="text-xs font-normal text-slate-400 bg-slate-50 px-2 py-0.5 rounded-full">池中有 0 人</span>
+                </h2>
+                
+                <form id="normal-form" class="flex gap-2 mb-4">
+                    <input type="text" id="normal-input" placeholder="输入普通成员姓名" class="flex-1 px-4 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-slate-500">
+                    <button type="submit" class="bg-slate-500 hover:bg-slate-600 text-white p-2 rounded-lg transition-colors">
+                        <!-- Plus Icon -->
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="M12 5v14"/></svg>
+                    </button>
+                </form>
+
+                <div id="normal-list" class="space-y-2 max-h-48 overflow-y-auto no-scrollbar">
+                    <p class="text-sm text-slate-400 text-center py-4 empty-msg">暂无普通成员</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- 操作按钮 -->
+        <div class="flex flex-wrap justify-center gap-4 mb-10">
+            <button id="draw-btn" class="bg-indigo-600 text-white hover:bg-indigo-700 hover:shadow-indigo-200 px-8 py-3 rounded-xl font-bold text-lg shadow-lg flex items-center gap-2 transition-all transform hover:scale-105 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed">
+                <span id="draw-text">开始抽签</span>
+                <!-- Shuffle Icon -->
+                <svg id="draw-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 18h1.4c1.3 0 2.5-.6 3.3-1.7l14.2-12.6c.8-1.1 2-1.7 3.3-1.7H22"/><path d="M2 6h1.4c1.3 0 2.5.6 3.3 1.7l14.2 12.6c.8 1.1 2 1.7 3.3 1.7H22"/></svg>
+            </button>
+          
+            <button id="clear-btn" class="px-6 py-3 rounded-xl font-medium bg-white border border-slate-200 text-slate-600 hover:bg-slate-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+                清空结果
+            </button>
+
+            <button id="reset-btn" class="px-6 py-3 rounded-xl font-medium text-red-500 hover:bg-red-50 transition-colors flex items-center gap-2">
+                <!-- RotateCcw Icon -->
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 12"/><path d="M3 3v9h9"/></svg>
+                重置名单
+            </button>
+        </div>
+
+        <!-- 结果展示区 -->
+        <div id="result-area" class="hidden animate-fade-in-up">
+            <h3 class="text-center text-xl font-bold text-slate-700 mb-6">分组结果</h3>
+            <div class="grid md:grid-cols-2 gap-8">
+              
+                <!-- 警组 (蓝色) -->
+                <div class="bg-gradient-to-br from-blue-50 to-white p-6 rounded-2xl shadow-md border border-blue-200">
+                    <div class="flex justify-between items-center mb-4 pb-2 border-b border-blue-200">
+                        <h4 class="text-2xl font-black text-blue-700">警组</h4>
+                        <span id="police-count" class="text-sm font-medium bg-blue-100 text-blue-800 px-3 py-1 rounded-full">0 人</span>
+                    </div>
+
+                    <div class="space-y-4">
+                        <!-- 核心 -->
+                        <div>
+                            <p class="text-xs uppercase tracking-wider text-amber-600 font-bold mb-2 flex items-center gap-1">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m2 4 3 12h14l3-12-6 7-4-7-4 7-6-7zm3 16h14"/></svg>
+                                核心成员
+                            </p>
+                            <div id="police-core-list" class="grid grid-cols-1 gap-2"></div>
+                        </div>
+                        <!-- 普通 -->
+                        <div>
+                            <p class="text-xs uppercase tracking-wider text-blue-600 font-bold mb-2 flex items-center gap-1">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                                普通成员
+                            </p>
+                            <div id="police-normal-list" class="grid grid-cols-1 gap-2"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 匪组 (深橙色) -->
+                <div class="bg-gradient-to-br from-orange-50 to-white p-6 rounded-2xl shadow-md border border-orange-200">
+                    <div class="flex justify-between items-center mb-4 pb-2 border-b border-orange-200">
+                        <h4 class="text-2xl font-black text-orange-700">匪组</h4>
+                        <span id="bandit-count" class="text-sm font-medium bg-orange-100 text-orange-800 px-3 py-1 rounded-full">0 人</span>
+                    </div>
+
+                    <div class="space-y-4">
+                        <!-- 核心 -->
+                        <div>
+                            <p class="text-xs uppercase tracking-wider text-amber-600 font-bold mb-2 flex items-center gap-1">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m2 4 3 12h14l3-12-6 7-4-7-4 7-6-7zm3 16h14"/></svg>
+                                核心成员
+                            </p>
+                            <div id="bandit-core-list" class="grid grid-cols-1 gap-2"></div>
+                        </div>
+                        <!-- 普通 -->
+                        <div>
+                            <p class="text-xs uppercase tracking-wider text-orange-700 font-bold mb-2 flex items-center gap-1">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                                普通成员
+                            </p>
+                            <div id="bandit-normal-list" class="grid grid-cols-1 gap-2"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 未分配 -->
+            <div id="leftovers-area" class="mt-8 p-4 bg-slate-100 rounded-lg border border-slate-200 hidden">
+                <h5 class="text-sm font-bold text-slate-500 uppercase tracking-wide mb-2">未分配人员 (超出人数上限)</h5>
+                <div id="leftovers-list" class="flex flex-wrap gap-2"></div>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        // --- 状态管理 ---
+        let corePool = [];
+        let normalPool = [];
+        
+        // --- DOM 元素引用 ---
+        const coreForm = document.getElementById('core-form');
+        const coreInput = document.getElementById('core-input');
+        const coreListEl = document.getElementById('core-list');
+        const coreCountEl = document.getElementById('core-count');
+
+        const normalForm = document.getElementById('normal-form');
+        const normalInput = document.getElementById('normal-input');
+        const normalListEl = document.getElementById('normal-list');
+        const normalCountEl = document.getElementById('normal-count');
+
+        const drawBtn = document.getElementById('draw-btn');
+        const drawText = document.getElementById('draw-text');
+        const drawIcon = document.getElementById('draw-icon');
+        const clearBtn = document.getElementById('clear-btn');
+        const resetBtn = document.getElementById('reset-btn');
+
+        const resultArea = document.getElementById('result-area');
+        const policeCountEl = document.getElementById('police-count');
+        const policeCoreListEl = document.getElementById('police-core-list');
+        const policeNormalListEl = document.getElementById('police-normal-list');
+        
+        const banditCountEl = document.getElementById('bandit-count');
+        const banditCoreListEl = document.getElementById('bandit-core-list');
+        const banditNormalListEl = document.getElementById('bandit-normal-list');
+
+        const leftoversArea = document.getElementById('leftovers-area');
+        const leftoversListEl = document.getElementById('leftovers-list');
+
+        // --- 图标 SVG (用于动态生成) ---
+        const trashIcon = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>`;
+
+        // --- 渲染列表函数 ---
+        function renderLists() {
+            // 渲染核心组
+            if (corePool.length === 0) {
+                coreListEl.innerHTML = '<p class="text-sm text-slate-400 text-center py-4">暂无核心成员</p>';
+            } else {
+                coreListEl.innerHTML = '';
+                corePool.forEach(member => {
+                    const div = document.createElement('div');
+                    div.className = 'flex justify-between items-center bg-amber-50 px-3 py-2 rounded text-sm text-amber-900 mb-2';
+                    div.innerHTML = `
+                        <span>${member.name}</span>
+                        <button onclick="removeCore(${member.id})" class="text-amber-400 hover:text-amber-600 transition-colors">
+                            ${trashIcon}
+                        </button>
+                    `;
+                    coreListEl.appendChild(div);
+                });
+            }
+            coreCountEl.innerText = `池中有 ${corePool.length} 人`;
+
+            // 渲染普通组
+            if (normalPool.length === 0) {
+                normalListEl.innerHTML = '<p class="text-sm text-slate-400 text-center py-4">暂无普通成员</p>';
+            } else {
+                normalListEl.innerHTML = '';
+                normalPool.forEach(member => {
+                    const div = document.createElement('div');
+                    div.className = 'flex justify-between items-center bg-slate-100 px-3 py-2 rounded text-sm text-slate-700 mb-2';
+                    div.innerHTML = `
+                        <span>${member.name}</span>
+                        <button onclick="removeNormal(${member.id})" class="text-slate-400 hover:text-slate-600 transition-colors">
+                            ${trashIcon}
+                        </button>
+                    `;
+                    normalListEl.appendChild(div);
+                });
+            }
+            normalCountEl.innerText = `池中有 ${normalPool.length} 人`;
+
+            // 更新按钮状态
+            if (corePool.length === 0 && normalPool.length === 0) {
+                drawBtn.disabled = true;
+                drawBtn.classList.add('bg-slate-300', 'text-slate-500', 'cursor-not-allowed');
+                drawBtn.classList.remove('bg-indigo-600', 'text-white', 'hover:bg-indigo-700');
+            } else {
+                drawBtn.disabled = false;
+                drawBtn.classList.remove('bg-slate-300', 'text-slate-500', 'cursor-not-allowed');
+                drawBtn.classList.add('bg-indigo-600', 'text-white', 'hover:bg-indigo-700');
+            }
+        }
+
+        // --- 逻辑操作函数 ---
+
+        // 添加成员
+        coreForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const val = coreInput.value.trim();
+            if (val) {
+                corePool.push({ id: Date.now(), name: val });
+                coreInput.value = '';
+                renderLists();
+            }
+        });
+
+        normalForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const val = normalInput.value.trim();
+            if (val) {
+                normalPool.push({ id: Date.now(), name: val });
+                normalInput.value = '';
+                renderLists();
+            }
+        });
+
+        // 删除成员 (挂载到window以便HTML onclick调用)
+        window.removeCore = (id) => {
+            corePool = corePool.filter(p => p.id !== id);
+            renderLists();
+        };
+
+        window.removeNormal = (id) => {
+            normalPool = normalPool.filter(p => p.id !== id);
+            renderLists();
+        };
+
+        // Fisher-Yates 洗牌算法
+        function shuffleArray(array) {
+            const arr = [...array];
+            for (let i = arr.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [arr[i], arr[j]] = [arr[j], arr[i]];
+            }
+            return arr;
+        }
+
+        // 抽签逻辑
+        drawBtn.addEventListener('click', () => {
+            // UI 动画状态
+            drawText.innerText = "抽签中...";
+            drawIcon.style.display = 'none';
+            drawBtn.disabled = true;
+            resultArea.classList.add('hidden'); // 重新开始时先隐藏结果
+
+            setTimeout(() => {
+                // 1. 打乱核心组
+                const shuffledCore = shuffleArray(corePool);
+                // A组 (警组) 取前2，B组 (匪组) 取接下来的2
+                const coreA = shuffledCore.slice(0, 2);
+                const coreB = shuffledCore.slice(2, 4);
+                const leftOverCore = shuffledCore.slice(4);
+
+                // 2. 打乱普通组
+                const shuffledNormal = shuffleArray(normalPool);
+                // A组 (警组) 取前3，B组 (匪组) 取接下来的3
+                const normalA = shuffledNormal.slice(0, 3);
+                const normalB = shuffledNormal.slice(3, 6);
+                const leftOverNormal = shuffledNormal.slice(6);
+
+                // 3. 渲染结果
+                renderResult(coreA, normalA, coreB, normalB, leftOverCore, leftOverNormal);
+
+                // 恢复按钮
+                drawText.innerText = "开始抽签";
+                drawIcon.style.display = 'block';
+                drawBtn.disabled = false;
+                
+                // 显示结果区
+                resultArea.classList.remove('hidden');
+                // 触发重绘动画
+                resultArea.classList.remove('animate-fade-in-up');
+                void resultArea.offsetWidth; // trigger reflow
+                resultArea.classList.add('animate-fade-in-up');
+                
+                // 启用清空按钮
+                clearBtn.disabled = false;
+            }, 600);
+        });
+
+        function renderResult(coreA, normalA, coreB, normalB, leftOverCore, leftOverNormal) {
+            // 警组渲染
+            policeCountEl.innerText = `${coreA.length + normalA.length} 人`;
+            
+            policeCoreListEl.innerHTML = coreA.length ? coreA.map(m => `
+                <div class="bg-amber-100 text-amber-900 px-3 py-2 rounded-lg font-medium border-l-4 border-amber-500">
+                    ${m.name}
+                </div>
+            `).join('') : '<div class="text-sm text-slate-400 italic px-2">无核心成员</div>';
+
+            policeNormalListEl.innerHTML = normalA.length ? normalA.map(m => `
+                <div class="bg-white text-slate-700 px-3 py-2 rounded-lg shadow-sm border border-slate-100">
+                    ${m.name}
+                </div>
+            `).join('') : '<div class="text-sm text-slate-400 italic px-2">无普通成员</div>';
+
+            // 匪组渲染 (深橙色主题)
+            banditCountEl.innerText = `${coreB.length + normalB.length} 人`;
+
+            banditCoreListEl.innerHTML = coreB.length ? coreB.map(m => `
+                <div class="bg-amber-100 text-amber-900 px-3 py-2 rounded-lg font-medium border-l-4 border-amber-500">
+                    ${m.name}
+                </div>
+            `).join('') : '<div class="text-sm text-slate-400 italic px-2">无核心成员</div>';
+
+            banditNormalListEl.innerHTML = normalB.length ? normalB.map(m => `
+                <div class="bg-white text-slate-700 px-3 py-2 rounded-lg shadow-sm border border-slate-100">
+                    ${m.name}
+                </div>
+            `).join('') : '<div class="text-sm text-slate-400 italic px-2">无普通成员</div>';
+
+            // 未分配渲染
+            const hasLeftovers = leftOverCore.length > 0 || leftOverNormal.length > 0;
+            if (hasLeftovers) {
+                leftoversArea.classList.remove('hidden');
+                let html = '';
+                leftOverCore.forEach(m => {
+                    html += `<span class="px-3 py-1 bg-amber-200 text-amber-800 rounded-full text-sm font-medium opacity-75">${m.name} (核心)</span>`;
+                });
+                leftOverNormal.forEach(m => {
+                    html += `<span class="px-3 py-1 bg-slate-200 text-slate-600 rounded-full text-sm font-medium">${m.name}</span>`;
+                });
+                leftoversListEl.innerHTML = html;
+            } else {
+                leftoversArea.classList.add('hidden');
+            }
+        }
+
+        // 清空结果
+        clearBtn.addEventListener('click', () => {
+            resultArea.classList.add('hidden');
+            clearBtn.disabled = true;
+        });
+
+        // 重置所有
+        resetBtn.addEventListener('click', () => {
+            if(confirm('确定要清空所有名单吗？')) {
+                corePool = [];
+                normalPool = [];
+                renderLists();
+                resultArea.classList.add('hidden');
+                clearBtn.disabled = true;
+            }
+        });
+
+        // 初始化
+        renderLists();
+        clearBtn.disabled = true;
+    </script>
+</body>
+</html>
+
